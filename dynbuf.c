@@ -28,18 +28,20 @@
 
 #include "dynbuf.h"
 
-#define MAX_DYNBUF_SIZE 4 * 1024 * 1024 // 4MiB
-
 bool dynbuf_prealloc(dynbuf_t *buffer, size_t capacity) {
-    if(capacity > MAX_DYNBUF_SIZE) return false;
+    // buffers are always null-terminated so the maximum size
+    // is (size_t maximum value) - 1. Since size_t is unsigned
+    // the only possible invalid size is exactly SIZE_MAX.
+    if(capacity == SIZE_MAX) return false;
     char *content = calloc(1, capacity + 1);
     if(!content) {
         return false;
     }
 
-    buffer->content = content;
-    buffer->capacity = capacity;
     buffer->size = 0;
+    buffer->capacity = capacity;
+    buffer->content = content;
+
     return true;
 }
 
@@ -53,7 +55,6 @@ bool dynbuf_nnew(dynbuf_t *buffer, const char *bytes, size_t size) {
     }
 
     memcpy(buffer->content, bytes, size);
-    buffer->capacity = size;
     buffer->size = size;
 
     return true;
@@ -65,7 +66,6 @@ void dynbuf_clear(dynbuf_t *buffer) {
     buffer->capacity = 0;
     buffer->content = nullptr;
 }
-
 
 /*
  * CODICE VECCHIO
@@ -105,6 +105,10 @@ bool dynbuf_format(dynbuf_t *buffer, const char *restrict fmt, ...) {
  * Manipulation
  */
 bool dynbuf_resize(dynbuf_t *buffer, size_t size) {
+    if(size == SIZE_MAX) {
+        return false;
+    }
+
     char *content = realloc(buffer->content, size + 1);
     if(!content) {
         return false;
@@ -115,15 +119,22 @@ bool dynbuf_resize(dynbuf_t *buffer, size_t size) {
     if(buffer->size > size) {
         buffer->size = size;
     }
+    buffer->content[size] = '\0';
 
     return true;
 }
 
 bool dynbuf_grow(dynbuf_t *buffer, size_t growth) {
+    if(SIZE_MAX - buffer->capacity < growth) {
+        return false;
+    }
     return dynbuf_resize(buffer, buffer->size + growth);
 }
 
 bool dynbuf_shrink(dynbuf_t *buffer, size_t reduction) {
+    if(buffer->capacity < reduction) {
+        return false;
+    }
     return dynbuf_resize(buffer, buffer->size - reduction);
 }
 
@@ -136,7 +147,7 @@ bool dynbuf_append(dynbuf_t *buffer, const char *string) {
 }
 
 bool dynbuf_nappend(dynbuf_t *buffer, const char *string, size_t size) {
-    if(size > SIZE_MAX - buffer->size) {
+    if(SIZE_MAX - buffer->size < size) {
         return false;
     }
 
