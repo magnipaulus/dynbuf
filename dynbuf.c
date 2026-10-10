@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/_types/_ssize_t.h>
 
 #include "dynbuf.h"
 
@@ -68,34 +69,27 @@ void dynbuf_clear(dynbuf_t *buffer) {
     buffer->content = nullptr;
 }
 
-/*
- * CODICE VECCHIO
- */
 bool dynbuf_format(dynbuf_t *buffer, const char *restrict fmt, ...) {
-    if(!buffer) return false;
+    va_list vaa, vab;
+    va_start(vaa, fmt);
+    va_copy(vab, vaa);
 
-    va_list o, c;
-    va_start(o, fmt);
-    va_copy(c, o);
-
-    ssize_t need = vsnprintf(nullptr, 0, fmt, c);
-    va_end(c);
+    ssize_t need = vsnprintf(nullptr, 0, fmt, vab);
+    va_end(vab);
 
     if(need < 0) {
-        va_end(o);
+        va_end(vaa);
         return false;
     }
 
-    char *content = calloc(1, need + 1);
-    if(!content) {
-        va_end(o);
+    if(!dynbuf_prealloc(buffer, need)) {
+        va_end(vaa);
         return false;
     }
 
-    vsnprintf(content, need + 1, fmt, o);
-    va_end(o);
+    vsnprintf(buffer->content, need, fmt, vaa);
+    va_end(vaa);
 
-    buffer->content = content;
     buffer->size = need;
 
     return true;
