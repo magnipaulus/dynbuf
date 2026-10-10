@@ -20,6 +20,7 @@
   THE SOFTWARE.
 */
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -166,14 +167,19 @@ bool dynbuf_nappend(dynbuf_t *buffer, const char *string, size_t size) {
     return true;
 }
 
-bool dynbuf_join(dynbuf_t *dest, dynbuf_t *buffer_a, dynbuf_t *buffer_b) {
-    dynbuf_t buff = {};
-    if(!dynbuf_prealloc(&buff, buffer_a->size + buffer_b->size)) {
+bool dynbuf_join(dynbuf_t *dest, dynbuf_t *a, dynbuf_t *b) {
+    if(SIZE_MAX - a->size < b->size) {
         return false;
     }
 
-    memcpy(buff.content, buffer_a->content, buffer_a->size);
-    memcpy(buff.content + buffer_a->size, buffer_b->content, buffer_b->size);
-    *dest = buff;
+    size_t dsize = a->size + b->size;
+    if(!dynbuf_prealloc(dest, dsize)) {
+        return false;
+    }
+
+    memcpy(dest->content, a->content, a->size);
+    memcpy((dest->content + a->size), b->content, b->size);
+    dest->size = dsize;
+
     return true;
 }
