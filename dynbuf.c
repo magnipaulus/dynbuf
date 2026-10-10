@@ -59,7 +59,7 @@ bool dynbuf_nnew(dynbuf_t *buffer, const char *bytes, size_t size) {
     return true;
 }
 
-void dynbuf_free(dynbuf_t *buffer) {
+void dynbuf_clear(dynbuf_t *buffer) {
     if(buffer->content) free(buffer->content);
     buffer->content = 0;
     buffer->capacity = 0;

@@ -36,7 +36,7 @@ typedef struct dynbuf {
 bool dynbuf_prealloc(dynbuf_t *buffer, size_t capacity);
 bool dynbuf_new(dynbuf_t *buffer, const char *bytes);
 bool dynbuf_nnew(dynbuf_t *buffer, const char *bytes, size_t size);
-void dynbuf_free(dynbuf_t *buffer);
+void dynbuf_clear(dynbuf_t *buffer);
 
 [[gnu::format(printf, 2, 3)]]
 bool dynbuf_format(dynbuf_t *buffer, const char *restrict fmt, ...);
