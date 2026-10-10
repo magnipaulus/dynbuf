@@ -119,6 +119,18 @@ bool dynbuf_resize(dynbuf_t *buffer, size_t size) {
     return true;
 }
 
+bool dynbuf_grow(dynbuf_t *buffer, size_t growth) {
+    return dynbuf_resize(buffer, buffer->size + growth);
+}
+
+bool dynbuf_shrink(dynbuf_t *buffer, size_t reduction) {
+    return dynbuf_resize(buffer, buffer->size - reduction);
+}
+
+bool dynbuf_minimize(dynbuf_t *buffer) {
+    return dynbuf_resize(buffer, buffer->size);
+}
+
 bool dynbuf_append(dynbuf_t *buffer, const char *string) {
     return dynbuf_nappend(buffer, string, strlen(string));
 }
