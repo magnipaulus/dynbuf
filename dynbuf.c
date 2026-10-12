@@ -26,11 +26,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/_types/_ssize_t.h>
 
 #include "dynbuf.h"
 
-bool dynbuf_prealloc(dynbuf_t *buffer, size_t capacity) {
+bool dynbuf_alloc(dynbuf_t *buffer, size_t capacity) {
     // buffers are always null-terminated so the maximum size
     // is (size_t maximum value) - 1. Since size_t is unsigned
     // the only possible invalid size is exactly SIZE_MAX.
@@ -52,7 +51,7 @@ bool dynbuf_new(dynbuf_t *buffer, const char *bytes) {
 }
 
 bool dynbuf_nnew(dynbuf_t *buffer, const char *bytes, size_t size) {
-    if(!dynbuf_prealloc(buffer, size)) {
+    if(!dynbuf_alloc(buffer, size)) {
         return false;
     }
 
@@ -62,7 +61,7 @@ bool dynbuf_nnew(dynbuf_t *buffer, const char *bytes, size_t size) {
     return true;
 }
 
-void dynbuf_clear(dynbuf_t *buffer) {
+void dynbuf_free(dynbuf_t *buffer) {
     if(buffer->content) free(buffer->content);
     buffer->content = 0;
     buffer->capacity = 0;
@@ -82,7 +81,7 @@ bool dynbuf_format(dynbuf_t *buffer, const char *restrict fmt, ...) {
         return false;
     }
 
-    if(!dynbuf_prealloc(buffer, need)) {
+    if(!dynbuf_alloc(buffer, need)) {
         va_end(vaa);
         return false;
     }
@@ -99,7 +98,7 @@ bool dynbuf_format(dynbuf_t *buffer, const char *restrict fmt, ...) {
 /*
  * Manipulation
  */
-bool dynbuf_resize(dynbuf_t *buffer, size_t size) {
+bool dynbuf_realloc(dynbuf_t *buffer, size_t size) {
     if(size == SIZE_MAX) {
         return false;
     }
@@ -123,18 +122,18 @@ bool dynbuf_grow(dynbuf_t *buffer, size_t growth) {
     if(SIZE_MAX - buffer->capacity < growth) {
         return false;
     }
-    return dynbuf_resize(buffer, buffer->size + growth);
+    return dynbuf_realloc(buffer, buffer->size + growth);
 }
 
 bool dynbuf_shrink(dynbuf_t *buffer, size_t reduction) {
     if(buffer->capacity < reduction) {
         return false;
     }
-    return dynbuf_resize(buffer, buffer->size - reduction);
+    return dynbuf_realloc(buffer, buffer->size - reduction);
 }
 
 bool dynbuf_minimize(dynbuf_t *buffer) {
-    return dynbuf_resize(buffer, buffer->size);
+    return dynbuf_realloc(buffer, buffer->size);
 }
 
 bool dynbuf_append(dynbuf_t *buffer, const char *string) {
@@ -148,10 +147,10 @@ bool dynbuf_nappend(dynbuf_t *buffer, const char *string, size_t size) {
 
     size_t need = buffer->size + size;
     if(!buffer->content) {
-        if(!dynbuf_prealloc(buffer, need)) {
+        if(!dynbuf_alloc(buffer, need)) {
             return false;
         }
-    } else if(need > buffer->capacity && !dynbuf_resize(buffer, need)) {
+    } else if(need > buffer->capacity && !dynbuf_realloc(buffer, need)) {
         return false;
     }
 
@@ -167,7 +166,7 @@ bool dynbuf_join(dynbuf_t *dest, dynbuf_t *a, dynbuf_t *b) {
     }
 
     size_t dsize = a->size + b->size;
-    if(!dynbuf_prealloc(dest, dsize)) {
+    if(!dynbuf_alloc(dest, dsize)) {
         return false;
     }
 
